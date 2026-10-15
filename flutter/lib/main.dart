@@ -15,6 +15,7 @@ import 'package:flutter_hbb/desktop/screen/desktop_view_camera_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_port_forward_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_remote_screen.dart';
 import 'package:flutter_hbb/desktop/screen/desktop_terminal_screen.dart';
+import 'package:flutter_hbb/desktop/widgets/cm_tray.dart';
 import 'package:flutter_hbb/desktop/widgets/refresh_wrapper.dart';
 import 'package:flutter_hbb/models/state_model.dart';
 import 'package:flutter_hbb/utils/multi_window_manager.dart';
@@ -297,6 +298,9 @@ void runConnectionManagerScreen() async {
     await showCmWindow(isStartup: true);
   }
   setResizable(false);
+  if (isWindows) {
+    await windowManager.setPreventClose(true);
+  }
   // Start the uni links handler and redirect links to Native, not for Flutter.
   listenUniLinks(handleByFlutter: false);
 }
@@ -319,7 +323,9 @@ showCmWindow({bool isStartup = false}) async {
         kConnectionManagerWindowSizeClosedChat, Alignment.topRight);
     _isCmReadyToShow = true;
   } else if (_isCmReadyToShow) {
-    if (await windowManager.getOpacity() != 1) {
+    if (isWindows && cmTray.isShowing) {
+      await cmTray.restoreCmWindow();
+    } else if (await windowManager.getOpacity() != 1) {
       await windowManager.setOpacity(1);
       await windowManager.focus();
       await windowManager.minimize(); //needed

@@ -21,6 +21,7 @@ import '../../common/widgets/chat_page.dart';
 import '../../models/file_model.dart';
 import '../../models/platform_model.dart';
 import '../../models/server_model.dart';
+import '../widgets/cm_tray.dart';
 
 /// Set only by this window's own close control, and only once the user has confirmed. Any other
 /// way the window can go - a session logout closing every window, the window manager, a native
@@ -29,6 +30,13 @@ import '../../models/server_model.dart';
 /// sets it (`ConnectionManagerState`) and the handler that reads it (`_DesktopServerPageState`)
 /// are different widgets.
 bool _cmClosedByOperator = false;
+
+Future<void> _hideToTray() async {
+  gFFI.serverModel.cmHiddenTimer?.cancel();
+  gFFI.serverModel.cmHiddenTimer = null;
+  await cmTray.show();
+  await windowManager.hide();
+}
 
 class DesktopServerPage extends StatefulWidget {
   const DesktopServerPage({Key? key}) : super(key: key);
@@ -51,18 +59,34 @@ class _DesktopServerPageState extends State<DesktopServerPage>
 
   @override
   void initState() {
+    if (isWindows) {
+      cmTray.onDisconnect = () {
+        _cmClosedByOperator = true;
+        windowManager.close();
+      };
+    }
     windowManager.addListener(this);
     super.initState();
   }
 
   @override
   void dispose() {
+    if (isWindows) {
+      cmTray.hide();
+    }
     windowManager.removeListener(this);
     super.dispose();
   }
 
   @override
   void onWindowClose() {
+    if (isWindows) {
+      if (!_cmClosedByOperator && tabController.state.value.tabs.isNotEmpty) {
+        _hideToTray();
+        return;
+      }
+      cmTray.hide();
+    }
     // Other platforms keep the old behaviour exactly: the ambiguity this guards against is a
     // Linux session logout, which closes every window in the session.
     final byOperator = _cmClosedByOperator || !isLinux;
@@ -78,6 +102,9 @@ class _DesktopServerPageState extends State<DesktopServerPage>
   }
 
   void onRemoveId(String id) {
+    if (isWindows) {
+      cmTray.updateToolTip();
+    }
     if (tabController.state.value.tabs.isEmpty) {
       windowManager.close();
     }
@@ -335,6 +362,10 @@ class ConnectionManagerState extends State<ConnectionManager>
   }
 
   Future<bool> handleWindowCloseButton() async {
+    if (isWindows) {
+      await _hideToTray();
+      return false;
+    }
     var tabController = gFFI.serverModel.tabController;
     final connLength = tabController.length;
     if (connLength <= 1) {
