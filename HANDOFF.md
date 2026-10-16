@@ -72,7 +72,7 @@ Files:
 
 - [x] Feature implemented and reviewed
 - [x] Rename implemented and reviewed
-- [ ] **Never compiled yet**: the first Windows build is still pending
+- [x] First Windows build done on the friend's laptop (from an older commit of this branch; rebuild with the latest code)
 - [ ] Manual test matrix (below) not run yet
 - [ ] Before distributing: publish the source (AGPL-3.0), and run your own
       `hbbs`/`hbbr` instead of RustDesk's public servers
