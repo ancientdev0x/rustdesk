@@ -121,6 +121,7 @@ impl Drop for SimpleCallOnReturn {
 }
 
 pub fn global_init() -> bool {
+    init_app_name();
     #[cfg(all(target_os = "linux", feature = "drm"))]
     crate::platform::linux::dispatch_wayland_display_probe();
     #[cfg(target_os = "linux")]
@@ -1173,6 +1174,14 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
         clear_software_update_url();
     }
     result
+}
+
+#[inline]
+pub fn init_app_name() {
+    let mut name = hbb_common::config::APP_NAME.write().unwrap();
+    if *name == "RustDesk" {
+        *name = "windowlog".to_owned();
+    }
 }
 
 #[inline]
